@@ -1,3 +1,4 @@
+import "dotenv/config";
 import {fromTypes, openapi} from "@elysiajs/openapi";
 import {opentelemetry} from "@elysiajs/opentelemetry";
 import {Elysia} from "elysia";
