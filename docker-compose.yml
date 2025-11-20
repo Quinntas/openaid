@@ -1,0 +1,49 @@
+version: "3.8"
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-root}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-rootpwd}
+      POSTGRES_DB: ${POSTGRES_DB:-openaid}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  cache:
+    image: "docker.dragonflydb.io/dragonflydb/dragonfly"
+    ulimits:
+      memlock: -1
+    ports:
+      - "6379:6379"
+    command: --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - dragonflydata:/data
+
+  litellm:
+    image: ghcr.io/berriai/litellm:main-latest
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./litellm_config.yaml:/app/config.yaml
+    command:
+      ["--config", "/app/config.yaml", "--port", "4000", "--detailed_debug"]
+    environment:
+      - LITELLM_LOG=${LITELLM_LOG:-ERROR}
+      - LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY}
+      - LITELLM_SALT_KEY=${LITELLM_SALT_KEY}
+      - STORE_MODEL_IN_DB=${STORE_MODEL_IN_DB:-True}
+      - LITELLM_CACHE=${LITELLM_CACHE:-True}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-root}:${POSTGRES_PASSWORD:-rootpwd}@db:5432/${POSTGRES_DB:-openaid}
+      - REDIS_HOST=cache
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    depends_on:
+      - db
+      - cache
+
+volumes:
+  pgdata:
+  dragonflydata:
