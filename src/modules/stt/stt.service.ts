@@ -1,30 +1,39 @@
-import dedent from "dedent";
-import type z from "zod";
-import {transcriptionAgent} from "./stt.agents";
+import z from "zod";
+import {googleAiModels} from "../ai/core/model";
 import {type transcribeDto, transcribeResponseDto} from "./stt.dtos";
+import {transcriptionAgentInstructions, transcriptionAgentPrompt} from "./stt.prompts";
 
 export async function transcribeAudio(
   dto: z.infer<typeof transcribeDto>
 ): Promise<z.infer<typeof transcribeResponseDto>> {
-  const res = await transcriptionAgent.generateObject(
-    [
-      {
-        role: "user",
-        content: [
-          {type: "text", text: dedent`Translate this audio to ${dto.language}`},
-          {
-            type: "file",
-            data: await dto.file.arrayBuffer(),
-            mediaType: dto.file.type,
-          },
-        ],
-      },
-    ],
-    transcribeResponseDto,
-    {
-      temperature: 0,
-    }
-  );
+  const arrayBuffer = await dto.file.arrayBuffer();
+  const b64File = Buffer.from(arrayBuffer).toString("base64");
 
-  return res.object;
+  const contents = [
+    {role: "system", text: transcriptionAgentInstructions},
+    {
+      role: "user",
+      text: transcriptionAgentPrompt({
+        language: dto.language,
+      }),
+    },
+    {
+      role: "user",
+      inlineData: {
+        mimeType: "audio/mp3",
+        data: b64File,
+      },
+    },
+  ];
+
+  const response = await googleAiModels.models.generateContent({
+    model: "gemini-2.5-flash",
+    contents: contents,
+    config: {
+      responseMimeType: "application/json",
+      responseJsonSchema: z.toJSONSchema(transcribeResponseDto),
+    },
+  });
+
+  return transcribeResponseDto.parse(JSON.parse(response.text || "{}"));
 }

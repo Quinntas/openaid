@@ -1,9 +1,9 @@
-import z from "zod";
+import z from "zod/v4";
 import {Languages} from "../ai/core/types/languages";
 
 export const transcribeDto = z.object({
   file: z.instanceof(File),
-  language: z.enum(Languages),
+  language: z.nativeEnum(Languages),
 });
 
 export const transcribeResponseDto = z.object({

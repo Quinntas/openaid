@@ -3,6 +3,7 @@ import {opentelemetry} from "@elysiajs/opentelemetry";
 import {Elysia} from "elysia";
 import z from "zod";
 import {sttController} from "../modules/stt/stt.controller";
+import {ttsController} from "../modules/tts/tts.controller";
 import {AuthOpenAPI, auth} from "./auth";
 
 const betterAuth = new Elysia({name: "better-auth"}).mount(auth.handler).macro({
@@ -41,18 +42,4 @@ const openApi = new Elysia({name: "openapi"}).use(
   })
 );
 
-export const app = new Elysia()
-  .use(opentelemetry())
-  .use(openApi)
-  .use(betterAuth)
-  .use(sttController)
-  .get("/user/:id", ({params: {pid}}) => pid, {
-    auth: true,
-    params: z.object({
-      pid: z.string(),
-    }),
-    response: z.string(),
-    detail: {
-      summary: "Get user by id",
-    },
-  });
+export const app = new Elysia().use(opentelemetry()).use(openApi).use(betterAuth).use(sttController).use(ttsController);
