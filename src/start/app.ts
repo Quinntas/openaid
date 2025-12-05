@@ -4,6 +4,7 @@ import {Elysia} from "elysia";
 import z from "zod";
 import {sttController} from "../modules/stt/stt.controller";
 import {ttsController} from "../modules/tts/tts.controller";
+import {visionController} from "../modules/vision/vision.controller";
 import {AuthOpenAPI, auth} from "./auth";
 
 const betterAuth = new Elysia({name: "better-auth"}).mount(auth.handler).macro({
@@ -42,4 +43,10 @@ const openApi = new Elysia({name: "openapi"}).use(
   })
 );
 
-export const app = new Elysia().use(opentelemetry()).use(openApi).use(betterAuth).use(sttController).use(ttsController);
+export const app = new Elysia()
+  .use(opentelemetry())
+  .use(openApi)
+  .use(betterAuth)
+  .use(sttController)
+  .use(ttsController)
+  .use(visionController);
